@@ -1,0 +1,139 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tours Management</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            text-align: left;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+    <a href="admins.html">Go to Admins Page</a>
+    <a href="clients.html">Go to Clients Page</a>
+    <a href="reservations.html">Go to Reservations Page</a>
+    <a href="index.html">Go to Countries Page</a>
+    <h1>Tours Management</h1>
+    <table id="tourTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Cost</th>
+                <th>ID_Countrie</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <h2>Add/Edit Tour</h2>
+    <form id="tourForm">
+        <label for="id">ID (for editing):</label>
+        <input type="text" id="id" readonly><br><br>
+
+        <label for="name">Name:</label>
+        <input type="text" id="name" required><br><br>
+
+        <label for="cost">Cost:</label>
+        <input type="text" id="cost" required><br><br>
+
+        <label for="id_countrie">ID_Countrie:</label>
+        <input type="text" id="id_countrie" required><br><br>
+
+        <label for="description">Description:</label>
+        <input type="text" id="description" required><br><br>
+
+        <button type="submit">Save</button>
+    </form>
+    <script>
+    const API_URL = "https://localhost:7136/api/tours";
+
+        async function fetchTours() {
+            const response = await fetch(API_URL);
+            const tours = await response.json();
+
+            const tbody = document.querySelector("#tourTable tbody");
+            tbody.innerHTML = "";
+
+            tours.forEach(tour => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                        <td>${tour.ID_Tour}</td>
+                        <td>${tour.Name}</td>
+                        <td>${tour.Cost}</td>
+                        <td>${tour.ID_Countrie}</td>
+                        <td>${tour.Description}</td>
+                        <td>
+                            <button onclick="editTour(${tour.ID_Tour})">Edit</button>
+                            <button onclick="deleteTour(${tour.ID_Tour})">Delete</button>
+                        </td>
+                    `;
+                tbody.appendChild(row);
+            });
+        }
+        document.querySelector("#tourForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const id = document.querySelector("#id").value;
+            const name = document.querySelector("#name").value;
+            const cost = document.querySelector("#cost").value;
+            const id_countrie = document.querySelector("#id_countrie").value;
+            const description = document.querySelector("#description").value;
+
+            const tour = { Name: name, Cost: cost, ID_Countrie: id_countrie, Description: description };
+
+            if (id) {
+                await fetch(`${API_URL}/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(tour),
+                });
+            } else {
+                await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(tour),
+                });
+            }
+
+            fetchTours();
+            document.querySelector("#tourForm").reset();
+        });
+        async function editTour(id) {
+            const response = await fetch(`${API_URL}/${id}`);
+            const tour = await response.json();
+
+            document.querySelector("#id").value = tour.ID_Tour;
+            document.querySelector("#name").value = tour.Name;
+            document.querySelector("#cost").value = tour.Cost;
+            document.querySelector("#id_countrie").value = tour.ID_Countrie;
+            document.querySelector("#description").value = tour.Description;
+        }
+
+        async function deleteTour(id) {
+            await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+            fetchTours(); 
+        }
+
+        fetchTours();</script>
+</body>
+</html>

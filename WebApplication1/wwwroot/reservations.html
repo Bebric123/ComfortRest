@@ -1,0 +1,140 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservations Management</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            text-align: left;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+    <a href="admins.html">Go to Admins Page</a>
+    <a href="clients.html">Go to Clients Page</a>
+    <a href="index.html">Go to Countries Page</a>
+    <a href="tours.html">Go to Tours Page</a>
+    <h1>Reservations Management</h1>
+    <table id="reservationTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>ID_Admin</th>
+                <th>ID_User</th>
+                <th>ID_Tour</th>
+                <th>DateReservation</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <h2>Add/Edit Reservation</h2>
+    <form id="reservationForm">
+        <label for="id">ID (for editing):</label>
+        <input type="text" id="id" readonly><br><br>
+
+        <label for="id_admin">ID_Admin:</label>
+        <input type="text" id="id_admin" required><br><br>
+
+        <label for="id_user">ID_User:</label>
+        <input type="text" id="id_user" required><br><br>
+
+        <label for="id_tour">ID_Tour:</label>
+        <input type="text" id="id_tour" required><br><br>
+
+        <label for="datereservation">DateReservation:</label>
+        <input type="text" id="datereservation" required><br><br>
+
+        <button type="submit">Save</button>
+    </form>
+    <script>
+        const API_URL = "https://localhost:7136/api/reservations";
+
+        async function fetchReservations() {
+            const response = await fetch(API_URL);
+            const reservations = await response.json();
+
+            const tbody = document.querySelector("#reservationTable tbody");
+            tbody.innerHTML = "";
+
+            reservations.forEach(reservation => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                        <td>${reservation.ID_Reservation}</td>
+                        <td>${reservation.ID_Admin}</td>
+                        <td>${reservation.ID_User}</td>
+                        <td>${reservation.ID_Tour}</td>
+                        <td>${reservation.DateReservation}</td>
+                        <td>
+                            <button onclick="editReservation(${reservation.ID_Reservation})">Edit</button>
+                            <button onclick="deleteReservation(${reservation.ID_Reservation})">Delete</button>
+                        </td>
+                    `;
+                tbody.appendChild(row);
+            });
+        }
+        document.querySelector("#reservationForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const id = document.querySelector("#id").value;
+            const id_admin = document.querySelector("#id_admin").value;
+            const id_user = document.querySelector("#id_user").value;
+            const id_tour = document.querySelector("#id_tour").value;
+            const datereservation = document.querySelector("#datereservation").value;
+
+            const reservation = { ID_Admin: id_admin, ID_User: id_user, ID_Tour: id_tour, DateReservation: datereservation };
+
+            if (id) {
+                await fetch(`${API_URL}/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(reservation),
+                });
+            } else {
+                await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(reservation),
+                });
+            }
+
+            fetchReservations();
+            document.querySelector("#reservationForm").reset();
+        });
+
+        async function editReservation(id) {
+            const response = await fetch(`${API_URL}/${id}`);
+            const reservation = await response.json();
+
+            document.querySelector("#id").value = reservation.ID_Reservation;
+            document.querySelector("#id_admin").value = reservation.ID_Admin;
+            document.querySelector("#id_user").value = reservation.ID_User;
+            document.querySelector("#id_tour").value = reservation.ID_Tour;
+            document.querySelector("#datereservation").value = reservation.DateReservation;
+        }
+
+        async function deleteReservation(id) {
+            await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+            fetchReservations(); 
+        }
+
+        fetchReservations();</script>
+</body>
+</html>

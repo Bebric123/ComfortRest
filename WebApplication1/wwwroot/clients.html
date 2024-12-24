@@ -1,0 +1,141 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clients Management</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            text-align: left;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+    <a href="admins.html">Go to Admins Page</a>
+    <a href="index.html">Go to Countries Page</a>
+    <a href="reservations.html">Go to Reservations Page</a>
+    <a href="tours.html">Go to Tours Page</a>
+    <h1>Clients Management</h1>
+    <table id="clientsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>FirstName</th>
+                <th>LastName</th>
+                <th>PhoneNumber</th>
+                <th>CreatedAt</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <h2>Add/Edit Clients</h2>
+    <form id="clientForm">
+        <label for="id">ID (for editing):</label>
+        <input type="text" id="id" readonly><br><br>
+
+        <label for="fname">FirstName:</label>
+        <input type="text" id="fname" required><br><br>
+
+        <label for="lname">LastName:</label>
+        <input type="text" id="lname" required><br><br>
+
+        <label for="phonenumber">PhoneNumber:</label>
+        <input type="text" id="phonenumber" required><br><br>
+
+        <label for="email">Email:</label>
+        <input type="text" id="email" required><br><br>
+
+        <button type="submit">Save</button>
+    </form>
+    <script>
+    const API_URL = "https://localhost:7136/api/client";
+
+        
+        async function fetchClients() {
+            const response = await fetch(API_URL);
+            const clients = await response.json();
+
+            const tbody = document.querySelector("#clientsTable tbody");
+            tbody.innerHTML = ""; 
+
+            clients.forEach(client => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${client.ID_User}</td>
+                    <td>${client.Name}</td>
+                    <td>${client.LastName}</td>
+                    <td>${client.PhoneNumber}</td>
+                    <td>${client.Email}</td>
+                    <td>
+                        <button onclick="editClient(${client.ID_User})">Edit</button>
+                        <button onclick="deleteClient(${client.ID_User})">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        document.querySelector("#clientForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const id = document.querySelector("#id").value;
+            const fname = document.querySelector("#fname").value;
+            const lname = document.querySelector("#lname").value;
+            const phonenumber = document.querySelector("#phonenumber").value;
+            const email = document.querySelector("#email").value;
+
+            const client = { Name: fname, LastName: lname, PhoneNumber: phonenumber, Email: email };
+
+            if (id) {
+                await fetch(`${API_URL}/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(client),
+                });
+            } else {
+                await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(client),
+                });
+            }
+
+            fetchClients();
+            document.querySelector("#clientForm").reset();
+        });
+        
+        async function editClient(id) {
+            const response = await fetch(`${API_URL}/${id}`);
+            const client = await response.json();
+
+            document.querySelector("#id").value = client.ID_User;
+            document.querySelector("#fname").value = client.Name;
+            document.querySelector("#lname").value = client.LastName;
+            document.querySelector("#phonenumber").value = client.PhoneNumber;
+            document.querySelector("#email").value = client.Email;
+        }
+
+        async function deleteClient(id) {
+            await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+            fetchClients(); 
+        }
+
+        fetchClients();</script>
+</body>
+</html>

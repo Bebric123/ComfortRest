@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countries Management</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            text-align: left;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+    <a href="admins.html">Go to Admins Page</a>
+    <a href="clients.html">Go to Clients Page</a>
+    <a href="reservations.html">Go to Reservations Page</a>
+    <a href="tours.html">Go to Tours Page</a>
+    <h1>Countries Management</h1>
+    <table id="countriesTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <h2>Add/Edit Country</h2>
+    <form id="countryForm">
+        <label for="id">ID (for editing):</label>
+        <input type="text" id="id" readonly><br><br>
+
+        <label for="name">Name:</label>
+        <input type="text" id="name" required><br><br>
+
+        <button type="submit">Save</button>
+    </form>
+
+    <script>
+        const API_URL = "https://localhost:7136/api/countries";
+
+        async function fetchCountries() {
+            const response = await fetch(API_URL);
+            const countries = await response.json();
+
+            const tbody = document.querySelector("#countriesTable tbody");
+            tbody.innerHTML = ""; 
+
+            countries.forEach(country => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                                        <td>${country.ID_Countrie}</td>
+                                        <td>${country.Name}</td>
+                                        <td>
+                                            <button onclick="editCountry(${country.ID_Countrie})">Edit</button>
+                                            <button onclick="deleteCountry(${country.ID_Countrie})">Delete</button>
+                                        </td>
+                                    `;
+                tbody.appendChild(row);
+            });
+        }
+
+        document.querySelector("#countryForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const id = document.querySelector("#id").value;
+            const name = document.querySelector("#name").value;
+
+            const country = { Name: name };
+
+            if (id) {
+                await fetch(`${API_URL}/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(country),
+                });
+            } else {
+                await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(country),
+                });
+            }
+
+            fetchCountries();
+            document.querySelector("#countryForm").reset();
+        });
+
+        async function editCountry(id) {
+            const response = await fetch(`${API_URL}/${id}`);
+            const country = await response.json();
+
+            document.querySelector("#id").value = country.ID_Countrie;
+            document.querySelector("#name").value = country.Name;
+        }
+
+        async function deleteCountry(id) {
+            await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+            fetchCountries();
+        }
+
+        fetchCountries();
+    </script>
+</body>
+</html>

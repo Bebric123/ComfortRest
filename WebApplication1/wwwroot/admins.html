@@ -1,0 +1,126 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admins Management</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            text-align: left;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html">Go to Countries Page</a>
+    <a href="clients.html">Go to Clients Page</a>
+    <a href="reservations.html">Go to Reservations Page</a>
+    <a href="tours.html">Go to Tours Page</a>
+    <h1>Admins Management</h1>
+    <table id="adminsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Password</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <h2>Add/Edit Admin</h2>
+    <form id="adminForm">
+        <label for="id">ID (for editing):</label>
+        <input type="text" id="id" readonly><br><br>
+
+        <label for="name">Name:</label>
+        <input type="text" id="name" required><br><br>
+
+        <label for="password">Password:</label>
+        <input type="text" id="password" required><br><br>
+
+        <button type="submit">Save</button>
+    </form>
+    <script>
+        const API_URL = "https://localhost:7136/api/admin";
+
+        async function fetchAdmins() {
+            const response = await fetch(API_URL);
+            const admins = await response.json();
+
+            const tbody = document.querySelector("#adminsTable tbody");
+            tbody.innerHTML = "";
+
+            admins.forEach(admin => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                                <td>${admin.ID_Admin}</td>
+                                <td>${admin.Name}</td>
+                                <td>${admin.Password}</td>
+                                <td>
+                                    <button onclick="editAdmin(${admin.ID_Admin})">Edit</button>
+                                    <button onclick="deleteAdmin(${admin.ID_Admin})">Delete</button>
+                                </td>
+                            `;
+                tbody.appendChild(row);
+            });
+        }
+        document.querySelector("#adminForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const id = document.querySelector("#id").value;
+            const name = document.querySelector("#name").value;
+            const password = document.querySelector("#password").value;
+
+            const admin = { Name: name, Password: password };
+
+            if (id) {
+                await fetch(`${API_URL}/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(admin),
+                });
+            } else {
+                await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(admin),
+                });
+            }
+
+            fetchAdmins();
+            document.querySelector("#adminForm").reset();
+        });
+        
+        async function editAdmin(id) {
+            const response = await fetch(`${API_URL}/${id}`);
+            const admin = await response.json();
+
+            document.querySelector("#id").value = admin.ID_Admin;
+            document.querySelector("#name").value = admin.Name;
+            document.querySelector("#password").value = admin.Password;
+        }
+
+        async function deleteAdmin(id) {
+            await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+            fetchAdmins(); 
+        }
+
+        fetchAdmins();</script>
+</body>
+</html>
