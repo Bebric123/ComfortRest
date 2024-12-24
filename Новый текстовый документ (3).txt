@@ -1,0 +1,179 @@
+CREATE DATABASE ComfortRest;
+GO
+
+USE ComfortRest;
+GO
+
+CREATE TABLE Countries (
+    ID_Countrie INT PRIMARY KEY IDENTITY(1,1),
+    Name NVARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Users (
+    ID_User INT PRIMARY KEY IDENTITY(1,1),
+    Name NVARCHAR(100) NOT NULL,
+    LastName NVARCHAR(100) NOT NULL,
+    PhoneNumber NVARCHAR(15) UNIQUE NOT NULL,
+    Email NVARCHAR(100) UNIQUE NOT NULL
+);
+
+CREATE TABLE Tours (
+    ID_Tour INT PRIMARY KEY IDENTITY(1,1),
+    Name NVARCHAR(200) NOT NULL,
+    Cost MONEY NOT NULL,
+    ID_Countrie INT NOT NULL,
+    Description NVARCHAR(MAX),
+    FOREIGN KEY (ID_Countrie) REFERENCES Countries(ID_Countrie)
+);
+
+CREATE TABLE Admin (
+    ID_Admin INT PRIMARY KEY IDENTITY(1,1),
+    Name NVARCHAR(100) NOT NULL,
+    Password NVARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Reservations (
+    ID_Reservation INT PRIMARY KEY IDENTITY(1,1),
+	ID_Admin INT NOT NULL,
+    ID_User INT NOT NULL,
+    ID_Tour INT NOT NULL,
+    DateReservation DATE NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (ID_User) REFERENCES Users(ID_User),
+    FOREIGN KEY (ID_Tour) REFERENCES Tours(ID_Tour),
+	FOREIGN KEY (ID_Admin) REFERENCES Admin(ID_Admin)
+);
+
+
+CREATE PROCEDURE AddCountries
+AS
+BEGIN
+   DECLARE @Counter INT = 1;
+    DECLARE @Names TABLE (Names NVARCHAR(100));
+    INSERT INTO @Names VALUES ('Франция'), ('Италия'), ('Германия'), ('Испания'), ('Япония');
+
+    WHILE @Counter <= 100
+    BEGIN
+        INSERT INTO Countries(Name) 
+        SELECT TOP 1 Names FROM @Names ORDER BY NEWID();
+        SET @Counter = @Counter + 1;
+    END
+END;
+GO
+
+CREATE PROCEDURE AddAdmin
+AS
+BEGIN
+    DECLARE @Counter INT = 1;
+    DECLARE @RandomName TABLE (Names NVARCHAR(100));
+    INSERT INTO @RandomName VALUES ('Админ1'), ('Админ2'), ('Админ3'), ('Админ4'), ('Админ5');
+
+    WHILE @Counter <= 5
+    BEGIN
+        DECLARE @Name NVARCHAR(100);
+        SELECT TOP 1 @Name = Names FROM @RandomName ORDER BY NEWID();
+
+        INSERT INTO Admin(Name, Password) 
+        VALUES (
+            @Name,
+            'Пароль' + CAST(@Counter AS NVARCHAR(10))
+        );
+
+        SET @Counter = @Counter + 1;
+    END
+END;
+GO
+-- Процедура для автозаполнения таблицы "Пользователи"
+CREATE PROCEDURE AddUsers
+AS
+BEGIN
+    DECLARE @Counter INT = 1;
+    DECLARE @NameUser TABLE (Names NVARCHAR(100));
+    DECLARE @LastNameUser TABLE (LastNames NVARCHAR(100));
+    INSERT INTO @NameUser VALUES ('Алексей'), ('Мария'), ('Дмитрий'), ('Елена'), ('Иван');
+    INSERT INTO @LastNameUser VALUES ('Иванов'), ('Петров'), ('Сидоров'), ('Кузнецов'), ('Смирнов');
+
+    WHILE @Counter <= 100
+    BEGIN
+        DECLARE @RandomName NVARCHAR(100);
+        DECLARE @RandomLastName NVARCHAR(100);
+
+        SELECT TOP 1 @RandomName = Names FROM @NameUser ORDER BY NEWID();
+        SELECT TOP 1 @RandomLastName = LastNames FROM @LastNameUser ORDER BY NEWID();
+
+        INSERT INTO Users (Name, LastName, PhoneNumber, Email) 
+        VALUES (
+            @RandomName,
+            @RandomLastName,
+            '+7900' + RIGHT('0000' + CAST(@Counter AS NVARCHAR(10)), 5), 
+            'user_' + CAST(@Counter AS NVARCHAR(10)) + '@example.com'
+        );
+
+        SET @Counter = @Counter + 1;
+    END
+END;
+GO
+
+-- Процедура для автозаполнения таблицы "Туры"
+CREATE PROCEDURE AddTours
+AS
+BEGIN
+    DECLARE @Counter INT = 1;
+    DECLARE @RandomName NVARCHAR(200);
+    DECLARE @Названия TABLE (Название NVARCHAR(200));
+    INSERT INTO @Названия VALUES ('Горный отдых'), ('Пляжный отдых'), ('Культурный тур'), ('Шоппинг тур'), ('Экскурсионный тур');
+
+    WHILE @Counter <= 100
+    BEGIN
+        -- Получаем случайное название тура
+        SELECT TOP 1 @RandomName = Название FROM @Названия ORDER BY NEWID();
+
+        -- Вставляем данные в таблицу
+        INSERT INTO Tours (Name, Cost, ID_Countrie, Description) 
+        VALUES (
+            @RandomName,
+            10000 + (@Counter * 100),
+            1 + ((@Counter - 1) % 100), 
+            'Описание тура ' + CAST(@Counter AS NVARCHAR(10))
+        );
+
+        SET @Counter = @Counter + 1;
+    END
+END;
+GO
+
+-- Процедура для автозаполнения таблицы "Бронирования"
+CREATE PROCEDURE AddReservations
+AS
+BEGIN
+    DECLARE @i INT = 1;
+    DECLARE @UserID INT;
+    DECLARE @TourID INT;
+    DECLARE @AdminID INT;
+
+    WHILE @i <= 100
+    BEGIN
+        SET @UserID = 1 + ((@i - 1) % 100); -- Циклично выбираем пользователя из 100 записей
+        SET @TourID = 1 + ((@i - 1) % 100); -- Циклично выбираем тур из 100 записей
+        SET @AdminID = 1 + ((@i - 1) % 5);   -- Циклично выбираем администратора из 5 записей
+
+        INSERT INTO Reservations(ID_User, ID_Tour, DateReservation, ID_Admin) 
+        VALUES (@UserID, @TourID, DATEADD(DAY, @i, '2024-01-01'), @AdminID);
+
+        SET @i = @i + 1;
+    END
+END;
+GO
+
+-- Выполнение процедур для заполнения данных
+EXEC AddCountries;
+EXEC AddUsers;
+EXEC AddTours;
+EXEC AddAdmin;
+EXEC AddReservations;
+
+-- Вывод данных для проверки
+SELECT * FROM Countries;
+SELECT * FROM Users;
+SELECT * FROM Tours;
+SELECT * FROM Reservations;
+SELECT * FROM Admin;
